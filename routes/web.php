@@ -27,11 +27,35 @@ Route::get('/payments/ajax', function (Request $request) {
     
     // Filter by dropdown selections (multiple values)
     if ($request->has('status') && is_array($request->status) && !empty($request->status)) {
-        $query->whereIn('status', array_map('strtolower', $request->status));
+        $statuses = array_map('strtolower', $request->status);
+        // Map frontend status values to database status values
+        $mappedStatuses = [];
+        foreach ($statuses as $status) {
+            switch ($status) {
+                case 'succeeded':
+                    $mappedStatuses[] = 'completed';
+                    break;
+                case 'failed':
+                    $mappedStatuses[] = 'failed';
+                    break;
+                case 'pending':
+                    $mappedStatuses[] = 'pending';
+                    break;
+                case 'refunded':
+                    $mappedStatuses[] = 'refunded';
+                    break;
+                case 'cancelled':
+                    $mappedStatuses[] = 'cancelled';
+                    break;
+                default:
+                    $mappedStatuses[] = $status;
+            }
+        }
+        $query->whereIn('status', $mappedStatuses);
     }
     
-    if ($request->has('payment') && is_array($request->payment) && !empty($request->payment)) {
-        $query->whereIn('payment_method', $request->payment);
+    if ($request->has('payment-method') && is_array($request->input('payment-method')) && !empty($request->input('payment-method'))) {
+        $query->whereIn('payment_method', $request->input('payment-method'));
     }
     
     if ($request->has('gateway') && is_array($request->gateway) && !empty($request->gateway)) {
